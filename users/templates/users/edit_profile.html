@@ -1,0 +1,100 @@
+{% extends "home/base/base_authenticated.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <h2>Editar Datos Personales</h2>
+    <form method="post" enctype="multipart/form-data" class="form">
+        {% csrf_token %}
+        <div class="row">
+            <!-- Primera sección: Nombre, Apellido, Documento, Dirección, Celular, Rol -->
+            <div class="col-md-6 mb-3">
+                <label for="id_first_name">Nombre:</label>
+                <input type="text" id="id_first_name" name="first_name" value="{{ form.instance.first_name }}" class="form-control" placeholder="Nombre">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_last_name">Apellido:</label>
+                <input type="text" id="id_last_name" name="last_name" value="{{ form.instance.last_name }}" class="form-control" placeholder="Apellido">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_documento">Documento:</label>
+                <input type="text" id="id_documento" name="documento" value="{{ form.instance.documento }}" class="form-control" placeholder="Documento">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_direccion">Dirección:</label>
+                <input type="text" id="id_direccion" name="direccion" value="{{ form.instance.direccion }}" class="form-control" placeholder="Dirección">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_celular">Celular:</label>
+                <input type="text" id="id_celular" name="celular" value="{{ form.instance.celular }}" class="form-control" placeholder="Celular">
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="id_role">Rol:</label>
+                <select id="id_role" name="role" class="form-control">
+                    <option value="">Seleccione un rol</option>
+                    {% for role in roles %}
+                    <option value="{{ role.id }}" {% if form.instance.role_id == role.id %} selected {% endif %}>
+                        {{ role.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <!-- Campo para subir la foto de perfil -->
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label for="id_foto_perfil">Foto de Perfil:</label>
+                <input type="file" id="id_foto_perfil" name="foto_perfil" class="form-control">
+            </div>
+        </div>
+
+        <!-- Segunda sección: Campos adicionales -->
+        <div class="row">
+            <div class="col-md-12 mb-3">
+                <label for="id_fecha_nacimiento">Fecha de Nacimiento:</label>
+                <input type="date" id="id_fecha_nacimiento" name="fecha_nacimiento" value="{{ form.instance.fecha_nacimiento }}" class="form-control">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_grupo_sanguineo">Grupo Sanguíneo:</label>
+                <input type="text" id="id_grupo_sanguineo" name="grupo_sanguineo" value="{{ form.instance.grupo_sanguineo }}" class="form-control" placeholder="Grupo Sanguíneo">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_alergias">Alergias:</label>
+                <textarea id="id_alergias" name="alergias" class="form-control" rows="2" placeholder="Alergias">{{ form.instance.alergias }}</textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_enfermedades_cronicas">Enfermedades Crónicas:</label>
+                <textarea id="id_enfermedades_cronicas" name="enfermedades_cronicas" class="form-control" rows="2" placeholder="Enfermedades Crónicas">{{ form.instance.enfermedades_cronicas }}</textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_discapacidades">Discapacidades:</label>
+                <textarea id="id_discapacidades" name="discapacidades" class="form-control" rows="2" placeholder="Discapacidades">{{ form.instance.discapacidades }}</textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_seguro_medico">Seguro Médico:</label>
+                <textarea id="id_seguro_medico" name="seguro_medico" class="form-control" rows="2" placeholder="Seguro Médico">{{ form.instance.seguro_medico }}</textarea>
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_medico_principal">Médico Principal:</label>
+                <input type="text" id="id_medico_principal" name="medico_principal" class="form-control" placeholder="Médico Principal" value="{{ form.instance.medico_principal }}">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_centro_medico_principal">Centro Médico Principal:</label>
+                <input type="text" id="id_centro_medico_principal" name="centro_medico_principal" class="form-control" placeholder="Centro Médico Principal" value="{{ form.instance.centro_medico_principal }}">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_contacto_nombre">Nombre de Contacto:</label>
+                <input type="text" id="id_contacto_nombre" name="contacto_nombre" class="form-control" placeholder="Nombre de Contacto" value="{{ form.instance.contacto_nombre }}">
+            </div>
+            <div class="col-md-12 mb-3">
+                <label for="id_contacto_numero">Número de Contacto:</label>
+                <input type="text" id="id_contacto_numero" name="contacto_numero" class="form-control" placeholder="Número de Contacto" value="{{ form.instance.contacto_numero }}">
+            </div>
+        </div>
+
+        <!-- Botón de guardar -->
+        <button type="submit" class="btn btn-primary mt-3">Guardar cambios</button>
+    </form>
+</div>
+{% endblock %}

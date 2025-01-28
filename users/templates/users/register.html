@@ -1,0 +1,60 @@
+{% extends "home/base/base_nonavbar.html" %}
+{% load static %}
+
+{% block title %}Registro - MedicFolio{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="card p-5 shadow-lg" style="width: 100%; max-width: 400px;">
+        <div class="text-center mb-4">
+            <img src="{% static 'img/logoSB.png' %}" alt="MedicFolio Logo" class="logo">
+            <h4 class="fw-bold mt-2">Crea tu cuenta</h4>
+            <p class="text-secondary">¿Ya tienes una cuenta? <a href="{% url 'users:login' %}" class="text-primary fw-bold">Inicia sesión</a>.</p>
+        </div>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="username" class="form-label">Nombre de usuario</label>
+                <input 
+                    type="text" 
+                    class="form-control" 
+                    id="username" 
+                    name="username" 
+                    placeholder="Escribe tu nombre de usuario" 
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="email" class="form-label">Correo Electrónico</label>
+                <input 
+                    type="email" 
+                    class="form-control" 
+                    id="email" 
+                    name="email" 
+                    placeholder="correo@ejemplo.com" 
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="password1" class="form-label">Contraseña</label>
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    id="password1" 
+                    name="password1" 
+                    placeholder="********" 
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="password2" class="form-label">Confirma tu contraseña</label>
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    id="password2" 
+                    name="password2" 
+                    placeholder="********" 
+                    required>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2">Registrarse</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "home/base/base_authenticated.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-0 py-4">
+  <div class="card mb-4">
+    <div class="card-body">
+      <!-- Foto de Perfil y Código QR -->
+      <div class="row mb-4">
+        <!-- Foto de Perfil -->
+        <div class="col-md-6 text-center">
+          {% if user.foto_perfil %}
+            <img src="{{ user.foto_perfil.url }}" alt="Foto de perfil" class="img-fluid rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+          {% else %}
+            <img src="{% static 'default_profile.png' %}" alt="No disponible" class="img-fluid rounded-circle" style="width: 120px; height: 120px; object-fit: cover;">
+          {% endif %}
+        </div>
+        <!-- Código QR -->
+        <div class="col-md-6 text-center">
+          {% if user.qr_code %}
+            <img src="{{ user.qr_code.url }}" alt="Código QR de {{ user.first_name }}" class="img-fluid" style="width: 120px; height: 120px;">
+          {% else %}
+            <p>No se ha generado el código QR.</p>
+          {% endif %}
+        
+        </div>
+      </div>
+
+      <!-- Información básica del perfil -->
+      <div class="mb-4">
+        <h2 class="h5 text-center mb-3">Datos Básicos</h2>
+        <dl class="row g-2">
+          <dt class="col-4">Nombre</dt>
+          <dd class="col-8">{{ user.first_name|default:"" }}</dd>
+          <dt class="col-4">Apellido</dt>
+          <dd class="col-8">{{ user.last_name|default:"" }}</dd>
+          <dt class="col-4">Documento</dt>
+          <dd class="col-8">{{ user.documento|default:"" }}</dd>
+          <dt class="col-4">Dirección</dt>
+          <dd class="col-8">{{ user.direccion|default:"" }}</dd>
+          <dt class="col-4">Celular</dt>
+          <dd class="col-8">{{ user.celular|default:"" }}</dd>
+          <dt class="col-4">Rol</dt>
+          <dd class="col-8">{{ user.role.name|default:"No asignado" }}</dd>
+        </dl>
+      </div>
+      
+      <!-- Separador -->
+      <hr>
+      
+      <!-- Información adicional -->
+      <h2 class="h5 text-center mb-3">Datos médicos</h2>
+      <dl class="row g-2">
+        <dt class="col-4">Fecha de Nacimiento</dt>
+        <dd class="col-8">
+          {% if user.fecha_nacimiento %}
+            {{ user.fecha_nacimiento|date:"d/m/Y" }}
+          {% else %}
+            No especificado
+          {% endif %}
+        </dd>
+        <dt class="col-4">Grupo Sanguíneo</dt>
+        <dd class="col-8">{{ user.grupo_sanguineo|default:"No especificado" }}</dd>
+        <dt class="col-4">Alergias</dt>
+        <dd class="col-8">{{ user.alergias|default:"No especificado" }}</dd>
+        <dt class="col-4">Enfermedades Crónicas</dt>
+        <dd class="col-8">{{ user.enfermedades_cronicas|default:"No especificado" }}</dd>
+        <dt class="col-4">Discapacidades</dt>
+        <dd class="col-8">{{ user.discapacidades|default:"No especificado" }}</dd>
+        <dt class="col-4">Seguro Médico</dt>
+        <dd class="col-8">{{ user.seguro_medico|default:"No especificado" }}</dd>
+        <dt class="col-4">Médico Principal</dt>
+        <dd class="col-8">{{ user.medico_principal|default:"No especificado" }}</dd>
+        <dt class="col-4">Centro Médico Principal</dt>
+        <dd class="col-8">{{ user.centro_medico_principal|default:"No especificado" }}</dd>
+        <dt class="col-4">Contacto de Emergencia</dt>
+        <dd class="col-8">
+          {{ user.contacto_nombre|default:"No especificado" }}<br>
+          {{ user.contacto_numero|default:"No especificado" }}
+        </dd>
+      </dl>
+      
+      <!-- Botones -->
+      <div class="text-center mt-4">
+        <!-- Botón de Editar Datos -->
+        <a href="{% url 'users:edit_profile' %}" class="btn btn-primary">Editar Datos</a>
+        <!-- Botón de Descargar QR -->
+        {% if user.qr_code %}
+          <a href="{{ user.qr_code.url }}" download="{{ user.username }}_qr.png" class="btn btn-secondary me-2">Descargar QR</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

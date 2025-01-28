@@ -1,0 +1,49 @@
+{% extends "home/base/base_nonavbar.html" %}
+{% load static %}
+
+{% block title %}Iniciar Sesión - MedicFolio{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center align-items-center vh-100 bg-light">
+    <div class="card p-5 shadow-lg" style="width: 100%; max-width: 400px;">
+        <div class="text-center mb-4">
+            <img src="{% static 'img/logoSB.png' %}" alt="MedicFolio Logo" class="logo">
+            <h4 class="fw-bold mt-2">¡Bienvenido de Nuevo!</h4>
+            <p class="text-secondary">¿Aún no tienes cuenta? <a href="{% url 'users:register' %}" class="text-primary fw-bold">Regístrate aquí</a></p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <div class="mb-3">
+                <label for="email" class="form-label text-secondary">Correo Electrónico</label>
+                <input 
+                    type="email" 
+                    class="form-control" 
+                    id="email" 
+                    name="username" 
+                    placeholder="Ingresa tu correo electrónico" 
+                    required>
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label text-secondary">Contraseña</label>
+                <input 
+                    type="password" 
+                    class="form-control" 
+                    id="password" 
+                    name="password" 
+                    placeholder="Ingresa tu contraseña" 
+                    required>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <input type="checkbox" id="remember" name="remember_me">
+                    <label for="remember" class="small">Recuérdame</label>
+                </div>
+                <a href="{% url 'users:password_reset' %}" class="text-primary small">¿Olvidaste tu contraseña?</a>
+            </div>
+            <button type="submit" class="btn btn-primary w-100 py-2">Iniciar Sesión</button>
+        </form>
+        
+    </div>
+</div>
+{% endblock %}

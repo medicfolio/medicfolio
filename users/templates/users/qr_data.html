@@ -1,0 +1,56 @@
+<!-- templates/users/qr_data.html -->
+{% extends "home/base/base_nonavbar.html" %}
+{% load static %}
+
+<div class="card p-5 shadow-lg" style="width: 100%; max-width: 400px;">
+    <div class="text-center mb-4">
+        <img src="{% static 'img/logoSB.png' %}" alt="MedicFolio Logo" class="logo">
+    </div>
+
+{% block title %}Información Médica de Emergencia{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <div class="card">
+        <div class="card-header bg-primary text-white text-center">
+            <h2 class="mb-0">Información Médica de Emergencia</h2>
+        </div>
+        <div class="card-body">
+            <!-- Nombre y Apellido -->
+            <div class="text-center mb-4">
+                <h3 class="h4 fw-bold">{{ user.first_name|default:"" }} {{ user.last_name|default:"" }}</h3>
+            </div>
+            <h3 class="h5 text-center mb-3">Datos Médicos</h3>
+            <dl class="row g-2">
+                <dt class="col-4">Fecha de Nacimiento</dt>
+                <dd class="col-8">
+                    {% if user.fecha_nacimiento %}
+                        {{ user.fecha_nacimiento|date:"d/m/Y" }}
+                    {% else %}
+                        No especificado
+                    {% endif %}
+                </dd>
+                <dt class="col-4">Grupo Sanguíneo</dt>
+                <dd class="col-8">{{ user.grupo_sanguineo|default:"No especificado" }}</dd>
+                <dt class="col-4">Alergias</dt>
+                <dd class="col-8">{{ user.alergias|default:"No especificado" }}</dd>
+                <dt class="col-4">Enfermedades Crónicas</dt>
+                <dd class="col-8">{{ user.enfermedades_cronicas|default:"No especificado" }}</dd>
+                <dt class="col-4">Discapacidades</dt>
+                <dd class="col-8">{{ user.discapacidades|default:"No especificado" }}</dd>
+                <dt class="col-4">Seguro Médico</dt>
+                <dd class="col-8">{{ user.seguro_medico|default:"No especificado" }}</dd>
+                <dt class="col-4">Médico Principal</dt>
+                <dd class="col-8">{{ user.medico_principal|default:"No especificado" }}</dd>
+                <dt class="col-4">Centro Médico Principal</dt>
+                <dd class="col-8">{{ user.centro_medico_principal|default:"No especificado" }}</dd>
+                <dt class="col-4">Contacto de Emergencia</dt>
+                <dd class="col-8">
+                    {{ user.contacto_nombre|default:"No especificado" }}<br>
+                    {{ user.contacto_numero|default:"No especificado" }}
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}
