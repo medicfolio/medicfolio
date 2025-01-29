@@ -23,9 +23,12 @@ def register(request):
     if request.method == "POST":
         form = RegisterForm(request.POST, request.FILES)
         if form.is_valid():
-            user = form.save(commit=False)  # No guardamos aún
-            user.save()  # Llama al método `save` que genera el QR
+            user = form.save(commit=False)
+            user.save()  # Genera el usuario y su QR
+            messages.success(request, "Tu cuenta ha sido creada con éxito. Ahora puedes iniciar sesión.")
             return redirect('users:login')
+        else:
+            messages.error(request, "Por favor, corrige los errores en el formulario.")
     else:
         form = RegisterForm()
     return render(request, 'users/register.html', {'form': form})

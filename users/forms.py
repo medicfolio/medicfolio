@@ -63,10 +63,25 @@ class ProfileUpdateForm(forms.ModelForm):
             "role": "Selecciona el rol del usuario, si corresponde.",
         }
 
-class RegisterForm(forms.ModelForm):
+class RegisterForm(UserCreationForm):
+    email = forms.EmailField(label="Correo electrónico", required=True)
+
     class Meta:
-        model = User
-        fields = ['username', 'email', 'password']
-        widgets = {
-            'password': forms.PasswordInput(),
-        }
+        model = CustomUser
+        fields = [
+            "username", "email", "password1", "password2",
+            "first_name", "last_name", "role", "fecha_nacimiento",
+            "documento", "celular"
+        ]
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if CustomUser.objects.filter(email=email).exists():
+            raise ValidationError("Este correo electrónico ya está registrado.")
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if commit:
+            user.save()  # Esto llamará al método `save()` del modelo
+        return user

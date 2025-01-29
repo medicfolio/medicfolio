@@ -52,12 +52,10 @@ class CustomUser(AbstractUser):
         """Devuelve la URL del código QR del usuario."""
         return reverse('users:qr_data', args=[self.qr_key])
 
-    def regenerate_qr_code(self):
-        """
-        Método para regenerar el código QR del usuario.
-        """
-        base_url = "http://192.168.0.27:8000"
-        qr_url = f"{base_url}{reverse('users:qr_data', args=[self.qr_key])}"
+    def generate_qr_code(self):
+        """Genera un código QR para el usuario."""
+        base_url = "http://192.168.0.27:8000"  # Cambia esta URL según tu configuración
+        qr_url = f"{base_url}{self.get_qr_url()}"
 
         qr = qrcode.QRCode(
             version=1,
@@ -76,14 +74,17 @@ class CustomUser(AbstractUser):
         qr_file_name = f"{self.username}_qr.png"
         self.qr_code.save(qr_file_name, ContentFile(qr_buffer.getvalue()), save=False)
 
-        # Asegúrate de guardar el objeto después de regenerar
-        self.save()
+    def save(self, *args, **kwargs):
+        """Sobrescribe el método save para generar el QR antes de guardar."""
+        if not self.qr_code:
+            self.generate_qr_code()
+        super().save(*args, **kwargs)
 
 def generate_qr_code(self):
     if not self.qr_key:
         self.qr_key = uuid.uuid4()
 
-    base_url = "http://127.0.0.1:8000"
+    base_url = "http://192.168.0.27:8000/"
     qr_url = f"{base_url}{self.get_qr_url()}"
 
     qr = qrcode.QRCode(
