@@ -5,7 +5,7 @@ from django.contrib.auth.views import LoginView, PasswordResetView
 from django.contrib import messages
 from django.contrib.auth import logout
 from .models import CustomUser, Role
-from .forms import CustomUserCreationForm, ProfileUpdateForm
+from .forms import CustomUserCreationForm, ProfileUpdateForm, RegisterForm
 from django.views.generic import DetailView, UpdateView
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.messages import get_messages

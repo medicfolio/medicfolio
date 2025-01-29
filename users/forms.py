@@ -4,6 +4,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ValidationError
 from .models import CustomUser, Role
+from django.contrib.auth.models import User
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(label="Correo electrónico", required=True)
@@ -60,4 +61,12 @@ class ProfileUpdateForm(forms.ModelForm):
         }
         help_texts = {
             "role": "Selecciona el rol del usuario, si corresponde.",
+        }
+
+class RegisterForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['username', 'email', 'password']
+        widgets = {
+            'password': forms.PasswordInput(),
         }

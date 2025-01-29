@@ -16,7 +16,7 @@ urlpatterns = [
     # 1. Autenticación: Login, Logout y Registro
     path('login/', CustomLoginView.as_view(), name='login'),
     path('logout/', logout_view, name='logout'),
-    path('register/', register, name='register'),
+    path('register/', views.register, name='register'),
 
     # 2. Perfil de Usuario
     path('profile/', profile_view, name='profile'),
