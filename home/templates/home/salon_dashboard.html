@@ -1,0 +1,1266 @@
+{% load static %}
+<!doctype html>
+<html lang="es" class="h-full">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Sistema de Gestión de Peluquería</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { box-sizing: border-box; }
+    .fade-in { animation: fadeIn 0.3s ease-in; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .loading-spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: white; width: 20px; height: 20px; animation: spin 0.8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .stat-card { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .stat-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
+    .btn-tab { transition: all 0.2s ease; }
+    .notification-badge { animation: pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="h-full bg-gray-50">
+  <div id="app-container" class="h-full w-full flex flex-col overflow-auto">
+   <!-- Header -->
+   <header class="bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+     <div class="flex justify-between items-center">
+      <div>
+       <h1 id="app-title" class="text-3xl font-bold">Salón de Belleza</h1>
+       <p class="text-purple-100 mt-1">Sistema de Gestión Completo</p>
+      </div>
+      <div class="flex items-center gap-4">
+       <div id="reminders-badge" class="relative cursor-pointer" onclick="showReminders()">
+        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+        <span id="reminder-count" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center notification-badge hidden">0</span>
+       </div>
+      </div>
+     </div>
+    </div>
+   </header>
+   <!-- Navigation Tabs -->
+   <nav class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+     <div class="flex space-x-1">
+      <button onclick="switchTab('dashboard')" class="btn-tab px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-600" data-tab="dashboard">Dashboard</button>
+      <button onclick="switchTab('clients')" class="btn-tab px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-600" data-tab="clients">Clientes</button>
+      <button onclick="switchTab('inventory')" class="btn-tab px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-600" data-tab="inventory">Inventario</button>
+      <button onclick="switchTab('finance')" class="btn-tab px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-600" data-tab="finance">Finanzas</button>
+      <button onclick="switchTab('reports')" class="btn-tab px-6 py-4 text-sm font-medium border-b-2 border-transparent hover:border-purple-500 hover:text-purple-600" data-tab="reports">Reportes</button>
+     </div>
+    </div>
+   </nav>
+   <!-- Main Content -->
+   <main class="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+    <!-- Dashboard Tab -->
+    <div id="dashboard-tab" class="tab-content">
+     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div class="stat-card bg-white rounded-lg shadow p-6">
+       <div class="flex items-center">
+        <div class="flex-shrink-0 bg-purple-100 rounded-lg p-3">
+         <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm text-gray-600">Total Clientes</p>
+         <p id="stat-clients" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+      <div class="stat-card bg-white rounded-lg shadow p-6">
+       <div class="flex items-center">
+        <div class="flex-shrink-0 bg-green-100 rounded-lg p-3">
+         <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm text-gray-600">Ingresos del Mes</p>
+         <p id="stat-income" class="text-2xl font-bold text-green-600">$0</p>
+        </div>
+       </div>
+      </div>
+      <div class="stat-card bg-white rounded-lg shadow p-6">
+       <div class="flex items-center">
+        <div class="flex-shrink-0 bg-blue-100 rounded-lg p-3">
+         <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"></path></svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm text-gray-600">Productos</p>
+         <p id="stat-products" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+      <div class="stat-card bg-white rounded-lg shadow p-6">
+       <div class="flex items-center">
+        <div class="flex-shrink-0 bg-yellow-100 rounded-lg p-3">
+         <svg class="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div class="ml-4">
+         <p class="text-sm text-gray-600">Recordatorios</p>
+         <p id="stat-reminders" class="text-2xl font-bold text-gray-900">0</p>
+        </div>
+       </div>
+      </div>
+     </div>
+     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-white rounded-lg shadow p-6">
+       <h3 class="text-lg font-semibold text-gray-900 mb-4">Productos con Stock Bajo</h3>
+       <div id="low-stock-list" class="space-y-3">
+        <p class="text-gray-500 text-center py-8">No hay productos con stock bajo</p>
+       </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+       <h3 class="text-lg font-semibold text-gray-900 mb-4">Próximas Visitas Esperadas</h3>
+       <div id="upcoming-visits-list" class="space-y-3">
+        <p class="text-gray-500 text-center py-8">No hay visitas próximas</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Clients Tab -->
+    <div id="clients-tab" class="tab-content hidden">
+     <div class="bg-white rounded-lg shadow">
+      <div class="p-6 border-b border-gray-200">
+       <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900">Gestión de Clientes</h2>
+        <button onclick="showAddClientModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+         Nuevo Cliente
+        </button>
+       </div>
+      </div>
+      <div class="p-6">
+       <div id="clients-list" class="space-y-4">
+        <p class="text-gray-500 text-center py-8">No hay clientes registrados</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Inventory Tab -->
+    <div id="inventory-tab" class="tab-content hidden">
+     <div class="bg-white rounded-lg shadow">
+      <div class="p-6 border-b border-gray-200">
+       <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900">Inventario de Productos</h2>
+        <button onclick="showAddProductModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+         Nuevo Producto
+        </button>
+       </div>
+      </div>
+      <div class="p-6">
+       <div class="mb-4 flex gap-4">
+        <button onclick="filterInventory('all')" class="inventory-filter px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-medium" data-filter="all">Todos</button>
+        <button onclick="filterInventory('service')" class="inventory-filter px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="service">Para Servicios</button>
+        <button onclick="filterInventory('sale')" class="inventory-filter px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="sale">Para Venta</button>
+       </div>
+       <div id="inventory-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <p class="text-gray-500 text-center py-8 col-span-full">No hay productos en el inventario</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Finance Tab -->
+    <div id="finance-tab" class="tab-content hidden">
+     <div class="bg-white rounded-lg shadow">
+      <div class="p-6 border-b border-gray-200">
+       <div class="flex justify-between items-center">
+        <h2 class="text-xl font-semibold text-gray-900">Sistema Financiero</h2>
+        <button onclick="showAddTransactionModal()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors">
+         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+         Nueva Transacción
+        </button>
+       </div>
+      </div>
+      <div class="p-6">
+       <div class="mb-4 flex gap-4">
+        <button onclick="filterTransactions('all')" class="transaction-filter px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-medium" data-filter="all">Todas</button>
+        <button onclick="filterTransactions('service')" class="transaction-filter px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="service">Servicios</button>
+        <button onclick="filterTransactions('sale')" class="transaction-filter px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="sale">Ventas</button>
+        <button onclick="filterTransactions('purchase')" class="transaction-filter px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200" data-filter="purchase">Compras</button>
+       </div>
+       <div id="transactions-list" class="space-y-3">
+        <p class="text-gray-500 text-center py-8">No hay transacciones registradas</p>
+       </div>
+      </div>
+     </div>
+    </div>
+    <!-- Reports Tab -->
+    <div id="reports-tab" class="tab-content hidden">
+     <div class="space-y-6">
+      <div class="bg-white rounded-lg shadow p-6">
+       <h2 class="text-xl font-semibold text-gray-900 mb-4">Reporte de Ingresos vs Egresos</h2>
+       <div class="flex gap-4 mb-6">
+        <select id="report-period" class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+         <option value="day">Hoy</option>
+         <option value="month">Este Mes</option>
+         <option value="quarter">Este Trimestre</option>
+         <option value="year">Este Año</option>
+        </select>
+        <button onclick="generateFinancialReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors">Generar Reporte</button>
+       </div>
+       <div id="financial-report" class="space-y-4">
+        <p class="text-gray-500 text-center py-8">Selecciona un período y genera el reporte</p>
+       </div>
+      </div>
+      <div class="bg-white rounded-lg shadow p-6">
+       <h2 class="text-xl font-semibold text-gray-900 mb-4">Reporte de Clientes</h2>
+       <button onclick="generateClientReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg mb-6 transition-colors">Generar Reporte</button>
+       <div id="client-report" class="space-y-3">
+        <p class="text-gray-500 text-center py-8">Genera el reporte para ver el análisis de clientes</p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </main>
+   <div id="modal-overlay" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50 p-4" onclick="closeModal(event)">
+    <div class="bg-white rounded-lg max-w-2xl w-full max-h-[90%] overflow-y-auto" onclick="event.stopPropagation()">
+     <div id="modal-content"></div>
+    </div>
+   </div>
+   <div id="toast" class="fixed bottom-4 right-4 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg hidden fade-in">
+    <p id="toast-message"></p>
+   </div>
+  </div>
+  <script>
+    const defaultConfig = { app_title: 'Salón de Belleza', currency_symbol: '$' };
+    const endpoints = {
+      data: '{% url "home:salon_data" %}',
+      clients: '{% url "home:salon_clients" %}',
+      products: '{% url "home:salon_products" %}',
+      transactions: '{% url "home:salon_transactions" %}'
+    };
+    let allData = [];
+    let currentFilter = 'all';
+    let currentTab = 'dashboard';
+    function getCsrfToken() {
+      const meta = document.querySelector('meta[name="csrf-token"]');
+      if (meta) return meta.getAttribute('content');
+      const match = document.cookie.match(/csrftoken=([^;]+)/);
+      return match ? match[1] : '';
+    }
+    async function apiRequest(url, options = {}) {
+      const headers = options.headers || {};
+      return fetch(url, {
+        credentials: 'same-origin',
+        ...options,
+        headers: {
+          'Content-Type': 'application/json',
+          'X-CSRFToken': getCsrfToken(),
+          ...headers,
+        }
+      });
+    }
+    async function fetchData() {
+      const response = await fetch(endpoints.data);
+      if (!response.ok) {
+        showToast('No se pudieron cargar los datos', 'error');
+        return;
+      }
+      const payload = await response.json();
+      allData = [...(payload.clients || []), ...(payload.products || []), ...(payload.transactions || [])];
+      updateUI();
+    }
+    async function createResource(type, payload) {
+      const response = await apiRequest(endpoints[type], { method: 'POST', body: JSON.stringify(payload) });
+      return response.ok;
+    }
+    async function updateResource(type, id, payload) {
+      const base = endpoints[type];
+      const response = await apiRequest(`${base}${id}/`, { method: 'PUT', body: JSON.stringify(payload) });
+      return response.ok;
+    }
+    async function deleteResource(type, id) {
+      const base = endpoints[type];
+      const response = await apiRequest(`${base}${id}/delete/`, { method: 'DELETE' });
+      return response.ok;
+    }
+    function updateUI() {
+      updateStats();
+      updateClientsList();
+      updateInventoryList();
+      updateTransactionsList();
+      updateDashboard();
+      updateReminders();
+    }
+    function updateStats() {
+      const clients = allData.filter(d => d.type === 'client');
+      const products = allData.filter(d => d.type === 'product');
+      const transactions = allData.filter(d => d.type === 'transaction');
+      const now = new Date();
+      const thisMonth = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        return tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear();
+      });
+      const income = thisMonth
+        .filter(t => t.transactionType === 'service' || t.transactionType === 'sale')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      document.getElementById('stat-clients').textContent = clients.length;
+      document.getElementById('stat-income').textContent = `${defaultConfig.currency_symbol}${income.toFixed(2)}`;
+      document.getElementById('stat-products').textContent = products.length;
+      const reminders = getReminders();
+      document.getElementById('stat-reminders').textContent = reminders.length;
+    }
+    function updateDashboard() {
+      const products = allData.filter(d => d.type === 'product');
+      const lowStock = products.filter(p => p.quantity <= p.minStock);
+      const lowStockHtml = lowStock.length > 0
+        ? lowStock.map(p => `
+            <div class="flex justify-between items-center p-3 bg-red-50 rounded-lg border border-red-200">
+              <div>
+                <p class="font-medium text-gray-900">${p.productName}</p>
+                <p class="text-sm text-gray-600">${p.category}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-red-600 font-bold">${p.quantity} unidades</p>
+                <p class="text-xs text-gray-500">Mínimo: ${p.minStock}</p>
+              </div>
+            </div>
+          `).join('')
+        : '<p class="text-gray-500 text-center py-8">No hay productos con stock bajo</p>';
+      document.getElementById('low-stock-list').innerHTML = lowStockHtml;
+      const clients = allData.filter(d => d.type === 'client');
+      const upcomingVisits = clients
+        .filter(c => c.lastVisit && c.frequency)
+        .map(c => {
+          const lastVisit = new Date(c.lastVisit);
+          const nextVisit = new Date(lastVisit);
+          nextVisit.setDate(nextVisit.getDate() + c.frequency);
+          return { ...c, nextVisit };
+        })
+        .filter(c => c.nextVisit >= new Date())
+        .sort((a, b) => a.nextVisit - b.nextVisit)
+        .slice(0, 5);
+      const visitsHtml = upcomingVisits.length > 0
+        ? upcomingVisits.map(c => `
+            <div class="flex justify-between items-center p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+              <div>
+                <p class="font-medium text-gray-900">${c.name}</p>
+                <p class="text-sm text-gray-600">${c.phone}</p>
+              </div>
+              <div class="text-right">
+                <p class="text-yellow-700 font-medium">${formatDate(c.nextVisit)}</p>
+                <p class="text-xs text-gray-500">Frecuencia: ${c.frequency} días</p>
+              </div>
+            </div>
+          `).join('')
+        : '<p class="text-gray-500 text-center py-8">No hay visitas próximas</p>';
+      document.getElementById('upcoming-visits-list').innerHTML = visitsHtml;
+    }
+    function updateClientsList() {
+      const clients = allData.filter(d => d.type === 'client');
+      if (clients.length === 0) {
+        document.getElementById('clients-list').innerHTML = '<p class="text-gray-500 text-center py-8">No hay clientes registrados</p>';
+        return;
+      }
+      const html = clients.map(client => {
+        const transactions = allData.filter(t => t.type === 'transaction' && t.clientId === client.__backendId);
+        const lastVisit = client.lastVisit ? new Date(client.lastVisit) : null;
+        const nextVisit = lastVisit && client.frequency ? new Date(lastVisit.getTime() + client.frequency * 24 * 60 * 60 * 1000) : null;
+        return `
+          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start mb-3">
+              <div class="flex-1">
+                <h3 class="font-semibold text-lg text-gray-900">${client.name}</h3>
+                <p class="text-gray-600 text-sm">${client.phone} • ${client.email}</p>
+                ${client.birthday ? `<p class="text-gray-500 text-sm mt-1">🎂 ${formatDate(new Date(client.birthday))}</p>` : ''}
+              </div>
+              <div class="flex gap-2">
+                <button onclick="showServiceModal('${client.__backendId}')" class="text-purple-600 hover:text-purple-700 p-2" title="Agregar servicio">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                  </svg>
+                </button>
+                <button onclick="editClient('${client.__backendId}')" class="text-blue-600 hover:text-blue-700 p-2" title="Editar">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                  </svg>
+                </button>
+                <button onclick="showDeleteConfirm('client', '${client.__backendId}')" class="text-red-600 hover:text-red-700 p-2" title="Eliminar">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3 text-sm">
+              <div class="bg-gray-50 rounded p-2">
+                <p class="text-gray-600">Última visita</p>
+                <p class="font-medium text-gray-900">${lastVisit ? formatDate(lastVisit) : 'N/A'}</p>
+              </div>
+              <div class="bg-gray-50 rounded p-2">
+                <p class="text-gray-600">Próxima visita</p>
+                <p class="font-medium text-gray-900">${nextVisit ? formatDate(nextVisit) : 'N/A'}</p>
+              </div>
+              <div class="bg-gray-50 rounded p-2">
+                <p class="text-gray-600">Servicios</p>
+                <p class="font-medium text-gray-900">${transactions.filter(t => t.transactionType === 'service').length}</p>
+              </div>
+              <div class="bg-gray-50 rounded p-2">
+                <p class="text-gray-600">Total gastado</p>
+                <p class="font-medium text-gray-900">${defaultConfig.currency_symbol}${transactions.reduce((sum, t) => sum + (t.amount || 0), 0).toFixed(2)}</p>
+              </div>
+            </div>
+            ${client.notes ? `<p class="mt-3 text-sm text-gray-600 italic">${client.notes}</p>` : ''}
+          </div>
+        `;
+      }).join('');
+      document.getElementById('clients-list').innerHTML = html;
+    }
+    function updateInventoryList() {
+      let products = allData.filter(d => d.type === 'product');
+      if (currentFilter === 'service') {
+        products = products.filter(p => !p.forSale);
+      } else if (currentFilter === 'sale') {
+        products = products.filter(p => p.forSale);
+      }
+      if (products.length === 0) {
+        document.getElementById('inventory-list').innerHTML = '<p class="text-gray-500 text-center py-8 col-span-full">No hay productos en esta categoría</p>';
+        return;
+      }
+      const html = products.map(product => `
+        <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div class="flex justify-between items-start mb-3">
+            <div class="flex-1">
+              <h3 class="font-semibold text-gray-900">${product.productName}</h3>
+              <p class="text-sm text-gray-600">${product.category}</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="editProduct('${product.__backendId}')" class="text-blue-600 hover:text-blue-700 p-1" title="Editar">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                </svg>
+              </button>
+              <button onclick="showDeleteConfirm('product', '${product.__backendId}')" class="text-red-600 hover:text-red-700 p-1" title="Eliminar">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="space-y-2">
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Stock:</span>
+              <span class="font-medium ${product.quantity <= product.minStock ? 'text-red-600' : 'text-gray-900'}">${product.quantity} unidades</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Precio:</span>
+              <span class="font-medium text-gray-900">${defaultConfig.currency_symbol}${Number(product.price).toFixed(2)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-sm text-gray-600">Uso:</span>
+              <span class="text-xs px-2 py-1 rounded-full ${product.forSale ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}">${product.forSale ? 'Venta' : 'Servicio'}</span>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('inventory-list').innerHTML = html;
+    }
+    function updateTransactionsList() {
+      let transactions = allData.filter(d => d.type === 'transaction');
+      if (currentFilter !== 'all') {
+        transactions = transactions.filter(t => t.transactionType === currentFilter);
+      }
+      transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+      if (transactions.length === 0) {
+        document.getElementById('transactions-list').innerHTML = '<p class="text-gray-500 text-center py-8">No hay transacciones en esta categoría</p>';
+        return;
+      }
+      const html = transactions.map(trans => {
+        const client = allData.find(d => d.__backendId === trans.clientId);
+        const typeInfo = {
+          service: { icon: '✂️', color: 'blue', label: 'Servicio' },
+          sale: { icon: '🛍️', color: 'green', label: 'Venta' },
+          purchase: { icon: '📦', color: 'red', label: 'Compra' }
+        }[trans.transactionType];
+        return `
+          <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-2">
+                  <span class="text-2xl">${typeInfo.icon}</span>
+                  <div>
+                    <h3 class="font-semibold text-gray-900">${trans.description}</h3>
+                    <p class="text-sm text-gray-600">${formatDate(new Date(trans.date))}</p>
+                  </div>
+                </div>
+                ${client ? `<p class="text-sm text-gray-600">Cliente: ${client.name}</p>` : ''}
+                ${trans.items ? `<p class="text-sm text-gray-500 mt-1">${trans.items}</p>` : ''}
+              </div>
+              <div class="text-right">
+                <p class="text-xl font-bold ${trans.transactionType === 'purchase' ? 'text-red-600' : 'text-green-600'}">${trans.transactionType === 'purchase' ? '-' : '+'}${defaultConfig.currency_symbol}${Number(trans.amount).toFixed(2)}</p>
+                <span class="text-xs px-2 py-1 rounded-full bg-${typeInfo.color}-100 text-${typeInfo.color}-800">${typeInfo.label}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('transactions-list').innerHTML = html;
+    }
+    function switchTab(tabName) {
+      currentTab = tabName;
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.add('hidden'));
+      document.getElementById(`${tabName}-tab`).classList.remove('hidden');
+      document.querySelectorAll('.btn-tab').forEach(btn => {
+        if (btn.dataset.tab === tabName) {
+          btn.classList.add('border-purple-500', 'text-purple-600');
+          btn.classList.remove('border-transparent', 'text-gray-600');
+        } else {
+          btn.classList.remove('border-purple-500', 'text-purple-600');
+          btn.classList.add('border-transparent', 'text-gray-600');
+        }
+      });
+    }
+    function filterInventory(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.inventory-filter').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('bg-purple-100', 'text-purple-700', 'font-medium');
+          btn.classList.remove('bg-gray-100', 'text-gray-700');
+        } else {
+          btn.classList.remove('bg-purple-100', 'text-purple-700', 'font-medium');
+          btn.classList.add('bg-gray-100', 'text-gray-700');
+        }
+      });
+      updateInventoryList();
+    }
+    function filterTransactions(filter) {
+      currentFilter = filter;
+      document.querySelectorAll('.transaction-filter').forEach(btn => {
+        if (btn.dataset.filter === filter) {
+          btn.classList.add('bg-purple-100', 'text-purple-700', 'font-medium');
+          btn.classList.remove('bg-gray-100', 'text-gray-700');
+        } else {
+          btn.classList.remove('bg-purple-100', 'text-purple-700', 'font-medium');
+          btn.classList.add('bg-gray-100', 'text-gray-700');
+        }
+      });
+      updateTransactionsList();
+    }
+    function showAddClientModal() {
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Nuevo Cliente</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <form id="client-form" class="space-y-4">
+            <div>
+              <label for="client-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+              <input type="text" id="client-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="client-phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                <input type="tel" id="client-phone" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="client-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="client-email" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="client-birthday" class="block text-sm font-medium text-gray-700 mb-1">Cumpleaños</label>
+                <input type="date" id="client-birthday" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="client-frequency" class="block text-sm font-medium text-gray-700 mb-1">Frecuencia (días)</label>
+                <input type="number" id="client-frequency" placeholder="30" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div>
+              <label for="client-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+              <textarea id="client-notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Guardar Cliente</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('client-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const ok = await createResource('clients', {
+          type: 'client',
+          name: document.getElementById('client-name').value,
+          phone: document.getElementById('client-phone').value,
+          email: document.getElementById('client-email').value || '',
+          birthday: document.getElementById('client-birthday').value || '',
+          frequency: parseInt(document.getElementById('client-frequency').value) || 30,
+          notes: document.getElementById('client-notes').value || '',
+          lastVisit: ''
+        });
+        if (ok) {
+          showToast('Cliente agregado exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al agregar cliente', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Guardar Cliente';
+        }
+      });
+      showModal();
+    }
+    function showAddProductModal() {
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Nuevo Producto</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <form id="product-form" class="space-y-4">
+            <div>
+              <label for="product-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre del producto</label>
+              <input type="text" id="product-name" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="product-category" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+              <input type="text" id="product-category" required placeholder="Ej: Tintes, Shampoo, Tratamiento" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label for="product-quantity" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                <input type="number" id="product-quantity" required min="0" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="product-price" class="block text-sm font-medium text-gray-700 mb-1">Precio (${defaultConfig.currency_symbol})</label>
+                <input type="number" id="product-price" required min="0" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="product-minstock" class="block text-sm font-medium text-gray-700 mb-1">Stock mínimo</label>
+                <input type="number" id="product-minstock" required min="0" value="5" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="product-forsale" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500">
+                <span class="text-sm font-medium text-gray-700">Disponible para venta directa</span>
+              </label>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Guardar Producto</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const ok = await createResource('products', {
+          type: 'product',
+          productName: document.getElementById('product-name').value,
+          category: document.getElementById('product-category').value,
+          quantity: parseInt(document.getElementById('product-quantity').value),
+          price: parseFloat(document.getElementById('product-price').value),
+          minStock: parseInt(document.getElementById('product-minstock').value),
+          forSale: document.getElementById('product-forsale').checked
+        });
+        if (ok) {
+          showToast('Producto agregado exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al agregar producto', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Guardar Producto';
+        }
+      });
+      showModal();
+    }
+    function showAddTransactionModal() {
+      const clients = allData.filter(d => d.type === 'client');
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Nueva Transacción</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <form id="transaction-form" class="space-y-4">
+            <div>
+              <label for="trans-type" class="block text-sm font-medium text-gray-700 mb-1">Tipo de transacción</label>
+              <select id="trans-type" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent" onchange="updateTransactionForm()">
+                <option value="">Seleccionar...</option>
+                <option value="service">Servicio prestado</option>
+                <option value="sale">Venta de producto</option>
+                <option value="purchase">Compra de insumo</option>
+              </select>
+            </div>
+            <div id="client-select-container" class="hidden">
+              <label for="trans-client" class="block text-sm font-medium text-gray-700 mb-1">Cliente</label>
+              <select id="trans-client" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <option value="">Seleccionar cliente...</option>
+                ${clients.map(c => `<option value="${c.__backendId}">${c.name}</option>`).join('')}
+              </select>
+            </div>
+            <div>
+              <label for="trans-description" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+              <input type="text" id="trans-description" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="trans-amount" class="block text-sm font-medium text-gray-700 mb-1">Monto (${defaultConfig.currency_symbol})</label>
+              <input type="number" id="trans-amount" required min="0" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="trans-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input type="date" id="trans-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="trans-items" class="block text-sm font-medium text-gray-700 mb-1">Productos/Detalles (opcional)</label>
+              <textarea id="trans-items" rows="2" placeholder="Ej: Corte + Peinado, Tinte L'Oreal #45" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Guardar Transacción</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('trans-date').value = today;
+      document.getElementById('transaction-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const transType = document.getElementById('trans-type').value;
+        const clientId = document.getElementById('trans-client').value;
+        const ok = await createResource('transactions', {
+          type: 'transaction',
+          transactionType: transType,
+          clientId: clientId || '',
+          description: document.getElementById('trans-description').value,
+          amount: parseFloat(document.getElementById('trans-amount').value),
+          date: document.getElementById('trans-date').value,
+          items: document.getElementById('trans-items').value || ''
+        });
+        if (ok) {
+          showToast('Transacción registrada exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al registrar transacción', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Guardar Transacción';
+        }
+      });
+      showModal();
+    }
+    function updateTransactionForm() {
+      const type = document.getElementById('trans-type').value;
+      const clientContainer = document.getElementById('client-select-container');
+      if (type === 'service' || type === 'sale') {
+        clientContainer.classList.remove('hidden');
+        document.getElementById('trans-client').required = type === 'service';
+      } else {
+        clientContainer.classList.add('hidden');
+        document.getElementById('trans-client').required = false;
+      }
+    }
+    function showServiceModal(clientId) {
+      const client = allData.find(d => d.__backendId === parseInt(clientId));
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Agregar Servicio</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="mb-4 p-4 bg-purple-50 rounded-lg">
+            <p class="font-medium text-gray-900">${client.name}</p>
+            <p class="text-sm text-gray-600">${client.phone}</p>
+          </div>
+          <form id="service-form" class="space-y-4">
+            <div>
+              <label for="service-description" class="block text-sm font-medium text-gray-700 mb-1">Servicio prestado</label>
+              <input type="text" id="service-description" required placeholder="Ej: Corte + Peinado" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="service-amount" class="block text-sm font-medium text-gray-700 mb-1">Monto (${defaultConfig.currency_symbol})</label>
+              <input type="number" id="service-amount" required min="0" step="0.01" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="service-date" class="block text-sm font-medium text-gray-700 mb-1">Fecha</label>
+              <input type="date" id="service-date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="service-items" class="block text-sm font-medium text-gray-700 mb-1">Productos utilizados (opcional)</label>
+              <textarea id="service-items" rows="2" placeholder="Ej: Tinte L'Oreal #45, Tratamiento keratina" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"></textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Guardar Servicio</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('service-date').value = today;
+      document.getElementById('service-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const ok = await createResource('transactions', {
+          type: 'transaction',
+          transactionType: 'service',
+          clientId: clientId,
+          description: document.getElementById('service-description').value,
+          amount: parseFloat(document.getElementById('service-amount').value),
+          date: document.getElementById('service-date').value,
+          items: document.getElementById('service-items').value || ''
+        });
+        if (ok) {
+          showToast('Servicio registrado exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al registrar servicio', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Guardar Servicio';
+        }
+      });
+      showModal();
+    }
+    function editClient(clientId) {
+      const client = allData.find(d => d.__backendId === parseInt(clientId));
+      if (!client) return;
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Editar Cliente</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <form id="edit-client-form" class="space-y-4">
+            <div>
+              <label for="edit-client-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre completo</label>
+              <input type="text" id="edit-client-name" required value="${client.name}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="edit-client-phone" class="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                <input type="tel" id="edit-client-phone" required value="${client.phone}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="edit-client-email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" id="edit-client-email" value="${client.email}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="edit-client-birthday" class="block text-sm font-medium text-gray-700 mb-1">Cumpleaños</label>
+                <input type="date" id="edit-client-birthday" value="${client.birthday ? client.birthday.split('T')[0] : client.birthday || ''}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="edit-client-frequency" class="block text-sm font-medium text-gray-700 mb-1">Frecuencia (días)</label>
+                <input type="number" id="edit-client-frequency" value="${client.frequency}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div>
+              <label for="edit-client-notes" class="block text-sm font-medium text-gray-700 mb-1">Notas</label>
+              <textarea id="edit-client-notes" rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">${client.notes}</textarea>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Actualizar Cliente</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('edit-client-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const ok = await updateResource('clients', client.__backendId, {
+          ...client,
+          name: document.getElementById('edit-client-name').value,
+          phone: document.getElementById('edit-client-phone').value,
+          email: document.getElementById('edit-client-email').value || '',
+          birthday: document.getElementById('edit-client-birthday').value || '',
+          frequency: parseInt(document.getElementById('edit-client-frequency').value) || 30,
+          notes: document.getElementById('edit-client-notes').value || ''
+        });
+        if (ok) {
+          showToast('Cliente actualizado exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al actualizar cliente', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Actualizar Cliente';
+        }
+      });
+      showModal();
+    }
+    function editProduct(productId) {
+      const product = allData.find(d => d.__backendId === parseInt(productId));
+      if (!product) return;
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Editar Producto</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <form id="edit-product-form" class="space-y-4">
+            <div>
+              <label for="edit-product-name" class="block text-sm font-medium text-gray-700 mb-1">Nombre del producto</label>
+              <input type="text" id="edit-product-name" required value="${product.productName}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div>
+              <label for="edit-product-category" class="block text-sm font-medium text-gray-700 mb-1">Categoría</label>
+              <input type="text" id="edit-product-category" required value="${product.category}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+            </div>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label for="edit-product-quantity" class="block text-sm font-medium text-gray-700 mb-1">Cantidad</label>
+                <input type="number" id="edit-product-quantity" required min="0" value="${product.quantity}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="edit-product-price" class="block text-sm font-medium text-gray-700 mb-1">Precio (${defaultConfig.currency_symbol})</label>
+                <input type="number" id="edit-product-price" required min="0" step="0.01" value="${product.price}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+              <div>
+                <label for="edit-product-minstock" class="block text-sm font-medium text-gray-700 mb-1">Stock mínimo</label>
+                <input type="number" id="edit-product-minstock" required min="0" value="${product.minStock}" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+              </div>
+            </div>
+            <div>
+              <label class="flex items-center gap-2">
+                <input type="checkbox" id="edit-product-forsale" ${product.forSale ? 'checked' : ''} class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-2 focus:ring-purple-500">
+                <span class="text-sm font-medium text-gray-700">Disponible para venta directa</span>
+              </label>
+            </div>
+            <div class="flex gap-3 pt-4">
+              <button type="submit" class="flex-1 bg-purple-600 hover:bg-purple-700 text-white py-2 rounded-lg font-medium transition-colors">Actualizar Producto</button>
+              <button type="button" onclick="closeModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+            </div>
+          </form>
+        </div>
+      `;
+      document.getElementById('edit-product-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+        const ok = await updateResource('products', product.__backendId, {
+          ...product,
+          productName: document.getElementById('edit-product-name').value,
+          category: document.getElementById('edit-product-category').value,
+          quantity: parseInt(document.getElementById('edit-product-quantity').value),
+          price: parseFloat(document.getElementById('edit-product-price').value),
+          minStock: parseInt(document.getElementById('edit-product-minstock').value),
+          forSale: document.getElementById('edit-product-forsale').checked
+        });
+        if (ok) {
+          showToast('Producto actualizado exitosamente');
+          closeModal();
+          fetchData();
+        } else {
+          showToast('Error al actualizar producto', 'error');
+          btn.disabled = false;
+          btn.textContent = 'Actualizar Producto';
+        }
+      });
+      showModal();
+    }
+    function showDeleteConfirm(itemType, itemId) {
+      const item = allData.find(d => d.__backendId === parseInt(itemId));
+      if (!item) return;
+      const labels = { client: 'cliente', product: 'producto', transaction: 'transacción' };
+      const name = item.name || item.productName || item.description || 'este elemento';
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex items-center gap-4 mb-6">
+            <div class="flex-shrink-0 w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+              </svg>
+            </div>
+            <div>
+              <h2 class="text-xl font-bold text-gray-900">Confirmar eliminación</h2>
+              <p class="text-gray-600 mt-1">¿Estás seguro de que deseas eliminar este ${labels[itemType]}?</p>
+            </div>
+          </div>
+          <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <p class="font-medium text-gray-900">${name}</p>
+          </div>
+          <div class="flex gap-3">
+            <button onclick="confirmDelete('${itemId}', '${itemType}')" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-2 rounded-lg font-medium transition-colors">Sí, eliminar</button>
+            <button onclick="closeModal()" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-lg font-medium transition-colors">Cancelar</button>
+          </div>
+        </div>
+      `;
+      showModal();
+    }
+    async function confirmDelete(itemId, itemType) {
+      const item = allData.find(d => d.__backendId === parseInt(itemId));
+      if (!item) return;
+      const btn = event.target;
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+      const ok = await deleteResource(item.type + 's', item.__backendId);
+      if (ok) {
+        showToast('Elemento eliminado exitosamente');
+        closeModal();
+        fetchData();
+      } else {
+        showToast('Error al eliminar elemento', 'error');
+        btn.disabled = false;
+        btn.textContent = 'Sí, eliminar';
+      }
+    }
+    function generateFinancialReport() {
+      const period = document.getElementById('report-period').value;
+      const transactions = allData.filter(d => d.type === 'transaction');
+      const now = new Date();
+      let startDate, endDate = now;
+      switch(period) {
+        case 'day':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+          break;
+        case 'quarter':
+          const quarter = Math.floor(now.getMonth() / 3);
+          startDate = new Date(now.getFullYear(), quarter * 3, 1);
+          break;
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1);
+          break;
+      }
+      const filtered = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        return tDate >= startDate && tDate <= endDate;
+      });
+      const income = filtered
+        .filter(t => t.transactionType === 'service' || t.transactionType === 'sale')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      const expenses = filtered
+        .filter(t => t.transactionType === 'purchase')
+        .reduce((sum, t) => sum + (t.amount || 0), 0);
+      const services = filtered.filter(t => t.transactionType === 'service').length;
+      const sales = filtered.filter(t => t.transactionType === 'sale').length;
+      const purchases = filtered.filter(t => t.transactionType === 'purchase').length;
+      const balance = income - expenses;
+      document.getElementById('financial-report').innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+            <p class="text-sm text-green-700 font-medium mb-1">Total Ingresos</p>
+            <p class="text-3xl font-bold text-green-600">${defaultConfig.currency_symbol}${income.toFixed(2)}</p>
+            <p class="text-sm text-green-600 mt-2">${services} servicios • ${sales} ventas</p>
+          </div>
+          <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+            <p class="text-sm text-red-700 font-medium mb-1">Total Egresos</p>
+            <p class="text-3xl font-bold text-red-600">${defaultConfig.currency_symbol}${expenses.toFixed(2)}</p>
+            <p class="text-sm text-red-600 mt-2">${purchases} compras</p>
+          </div>
+          <div class="bg-purple-50 border border-purple-200 rounded-lg p-4">
+            <p class="text-sm text-purple-700 font-medium mb-1">Balance</p>
+            <p class="text-3xl font-bold ${balance >= 0 ? 'text-purple-600' : 'text-red-600'}">${defaultConfig.currency_symbol}${balance.toFixed(2)}</p>
+            <p class="text-sm text-purple-600 mt-2">${balance >= 0 ? 'Positivo' : 'Negativo'}</p>
+          </div>
+        </div>
+        <div class="bg-white border border-gray-200 rounded-lg p-4">
+          <h3 class="font-semibold text-gray-900 mb-3">Resumen del Período</h3>
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-gray-600">Período:</span>
+              <span class="font-medium text-gray-900">${formatDate(startDate)} - ${formatDate(endDate)}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Total transacciones:</span>
+              <span class="font-medium text-gray-900">${filtered.length}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-gray-600">Promedio ingreso por servicio:</span>
+              <span class="font-medium text-gray-900">${services > 0 ? defaultConfig.currency_symbol + (income / services).toFixed(2) : 'N/A'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+    function generateClientReport() {
+      const clients = allData.filter(d => d.type === 'client');
+      const now = new Date();
+      const clientsWithData = clients.map(client => {
+        const transactions = allData.filter(t => t.type === 'transaction' && t.clientId === client.__backendId);
+        const lastVisit = client.lastVisit ? new Date(client.lastVisit) : null;
+        const nextVisit = lastVisit && client.frequency ? new Date(lastVisit.getTime() + client.frequency * 24 * 60 * 60 * 1000) : null;
+        const isOverdue = nextVisit && nextVisit < now;
+        const totalSpent = transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+        return { ...client, lastVisit, nextVisit, isOverdue, serviceCount: transactions.filter(t => t.transactionType === 'service').length, totalSpent };
+      }).sort((a, b) => {
+        if (a.isOverdue && !b.isOverdue) return -1;
+        if (!a.isOverdue && b.isOverdue) return 1;
+        if (a.nextVisit && b.nextVisit) return a.nextVisit - b.nextVisit;
+        return 0;
+      });
+      if (clientsWithData.length === 0) {
+        document.getElementById('client-report').innerHTML = '<p class="text-gray-500 text-center py-8">No hay clientes registrados</p>';
+        return;
+      }
+      const html = clientsWithData.map(client => `
+        <div class="border border-gray-200 rounded-lg p-4 ${client.isOverdue ? 'bg-yellow-50 border-yellow-300' : ''}">
+          <div class="flex justify-between items-start mb-3">
+            <div>
+              <h3 class="font-semibold text-gray-900">${client.name}</h3>
+              <p class="text-sm text-gray-600">${client.phone}</p>
+            </div>
+            ${client.isOverdue ? '<span class="text-xs px-2 py-1 bg-yellow-200 text-yellow-800 rounded-full font-medium">¡Visita pendiente!</span>' : ''}
+          </div>
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+            <div>
+              <p class="text-gray-600">Última visita</p>
+              <p class="font-medium text-gray-900">${client.lastVisit ? formatDate(client.lastVisit) : 'N/A'}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Próxima visita</p>
+              <p class="font-medium ${client.isOverdue ? 'text-yellow-700' : 'text-gray-900'}">${client.nextVisit ? formatDate(client.nextVisit) : 'N/A'}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Servicios</p>
+              <p class="font-medium text-gray-900">${client.serviceCount}</p>
+            </div>
+            <div>
+              <p class="text-gray-600">Total gastado</p>
+              <p class="font-medium text-gray-900">${defaultConfig.currency_symbol}${client.totalSpent.toFixed(2)}</p>
+            </div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('client-report').innerHTML = html;
+    }
+    function getReminders() {
+      const clients = allData.filter(d => d.type === 'client');
+      const now = new Date();
+      const reminders = [];
+      clients.forEach(client => {
+        if (client.birthday) {
+          const bday = new Date(client.birthday);
+          const nextBday = new Date(now.getFullYear(), bday.getMonth(), bday.getDate());
+          if (nextBday < now) nextBday.setFullYear(now.getFullYear() + 1);
+          const daysUntil = Math.ceil((nextBday - now) / (1000 * 60 * 60 * 24));
+          if (daysUntil <= 7) {
+            reminders.push({ type: 'birthday', client, message: `Cumpleaños de ${client.name} en ${daysUntil} día${daysUntil !== 1 ? 's' : ''}`, priority: daysUntil === 0 ? 3 : daysUntil <= 3 ? 2 : 1 });
+          }
+        }
+        if (client.lastVisit && client.frequency) {
+          const lastVisit = new Date(client.lastVisit);
+          const nextVisit = new Date(lastVisit.getTime() + client.frequency * 24 * 60 * 60 * 1000);
+          if (nextVisit < now) {
+            const daysOverdue = Math.ceil((now - nextVisit) / (1000 * 60 * 60 * 24));
+            reminders.push({ type: 'overdue', client, message: `${client.name} tiene ${daysOverdue} día${daysOverdue !== 1 ? 's' : ''} de retraso`, priority: 3 });
+          } else {
+            const daysUntil = Math.ceil((nextVisit - now) / (1000 * 60 * 60 * 24));
+            if (daysUntil <= 3) {
+              reminders.push({ type: 'upcoming', client, message: `${client.name} debería visitarnos en ${daysUntil} día${daysUntil !== 1 ? 's' : ''}`, priority: 1 });
+            }
+          }
+        }
+      });
+      return reminders.sort((a, b) => b.priority - a.priority);
+    }
+    function updateReminders() {
+      const reminders = getReminders();
+      const badge = document.getElementById('reminder-count');
+      if (reminders.length > 0) {
+        badge.textContent = reminders.length;
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+    function showReminders() {
+      const reminders = getReminders();
+      if (reminders.length === 0) {
+        showToast('No hay recordatorios pendientes');
+        return;
+      }
+      const html = reminders.map(r => {
+        const icon = r.type === 'birthday' ? '🎂' : r.type === 'overdue' ? '⚠️' : '📅';
+        const bgColor = r.type === 'birthday' ? 'bg-pink-50 border-pink-200' : r.type === 'overdue' ? 'bg-red-50 border-red-300' : 'bg-yellow-50 border-yellow-200';
+        return `
+          <div class="flex items-center gap-3 p-3 ${bgColor} border rounded-lg">
+            <span class="text-2xl">${icon}</span>
+            <div class="flex-1">
+              <p class="font-medium text-gray-900">${r.message}</p>
+              <p class="text-sm text-gray-600">${r.client.phone}</p>
+            </div>
+          </div>
+        `;
+      }).join('');
+      document.getElementById('modal-content').innerHTML = `
+        <div class="p-6">
+          <div class="flex justify-between items-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-900">Recordatorios</h2>
+            <button onclick="closeModal()" class="text-gray-400 hover:text-gray-600">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
+          <div class="space-y-3">
+            ${html}
+          </div>
+        </div>
+      `;
+      showModal();
+    }
+    function formatDate(date) {
+      return new Intl.DateTimeFormat('es', { year: 'numeric', month: 'short', day: 'numeric' }).format(date);
+    }
+    function showModal() {
+      document.getElementById('modal-overlay').classList.remove('hidden');
+      document.getElementById('modal-overlay').classList.add('flex');
+    }
+    function closeModal(event) {
+      if (!event || event.target.id === 'modal-overlay') {
+        document.getElementById('modal-overlay').classList.add('hidden');
+        document.getElementById('modal-overlay').classList.remove('flex');
+      }
+    }
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      const toastMessage = document.getElementById('toast-message');
+      toastMessage.textContent = message;
+      toast.classList.remove('hidden');
+      setTimeout(() => { toast.classList.add('hidden'); }, 3000);
+    }
+    switchTab('dashboard');
+    fetchData();
+   </script>
+  </body>
+ </html>
